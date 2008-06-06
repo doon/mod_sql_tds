@@ -2,7 +2,7 @@
  * ProFTPD: mod_tds -- Support for connecting to TDS databases.
  *                     Microsoft SQL Server /  Sybase ASE
  *
- * Copyright (c) 2001-2005 Patrick Muldoon 
+ * Copyright (c) 2001-2008 Patrick Muldoon 
  * From code borrowed from mod_sql_mysql
  * Copyright (c) 2001 Andrew Houghton
  * Copyright (c) 2004-2005 TJ Saunders
@@ -78,7 +78,7 @@
 /* 
  * Internal define used for debug and logging.  
  */
-#define MOD_SQL_TDS_VERSION "mod_sql_tds/4.5"
+#define MOD_SQL_TDS_VERSION "mod_sql_tds/4.6"
 
 #include <sybfront.h>
 #include <sybdb.h>
@@ -439,7 +439,8 @@ MODRET cmd_open(cmd_rec *cmd){
   if (entry->ttl > 0) {
     entry->timer = pr_timer_add(entry->ttl, -1, 
 			     &sql_tds_module, 
-			     _sql_timer_callback); 
+			     _sql_timer_callback
+				 "TDS Connection ttl"); 
     log_debug(DEBUG_INFO,
 	      MOD_SQL_TDS_VERSION ": connection '%s' - %d second timer started",
 	      entry->name, entry->ttl);
