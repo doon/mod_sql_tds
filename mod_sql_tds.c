@@ -439,7 +439,7 @@ MODRET cmd_open(cmd_rec *cmd){
   if (entry->ttl > 0) {
     entry->timer = pr_timer_add(entry->ttl, -1, 
 			     &sql_tds_module, 
-			     _sql_timer_callback
+			     _sql_timer_callback,
 				 "TDS Connection ttl"); 
     log_debug(DEBUG_INFO,
 	      MOD_SQL_TDS_VERSION ": connection '%s' - %d second timer started",
