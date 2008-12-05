@@ -26,36 +26,6 @@
  * with OpenSSL, and distribute the resulting executable, without including
  * the source code for OpenSSL in the source distribution.
  */
-
-/*
- * $Id: mod_sql_tds.c,v 1.7 2005/09/06 18:10:05 doon Exp $
- *
- * $Log: mod_sql_tds.c,v $
- * Revision 1.7  2005/09/06 18:10:05  doon
- * Changes to work with mod_sql/4.2
- *
- * Revision 1.6  2004/01/05 16:26:01  doon
- * Noah Roberts Patch, and some code Cleanup/error Checking
- *
- * Revision 1.5  2003/12/31 14:35:02  doon
- * Addition of cmd_escapstring to do something useful (IE escape the string) instead of just copying it over (should fix the SQL Injection Bug)
- *
- * Revision 1.4  2003/12/30 18:47:43  doon
- * Fixed for 1.2.9 SQL_FREE_CMD instead of _sql_free_cmd
- *
- * Revision 1.3  2003/04/07 19:44:45  doon
- * Changes to work with proftp-1.2.8/mod_sql-4.10
- *
- * Revision 1.2  2001/12/21 20:25:56  doon
- * Code and Documentation Cleanups
- *
- * Revision 1.1.1.1  2001/12/21 16:29:06  doon
- * Initial Import into cvs
- *
- *
- */
-
-
 /*
  * $Libraries: -lsybdb $
  */
@@ -75,10 +45,11 @@
  *
  */
 
+
 /* 
  * Internal define used for debug and logging.  
  */
-#define MOD_SQL_TDS_VERSION "mod_sql_tds/4.6"
+#define MOD_SQL_TDS_VERSION "mod_sql_tds/4.7"
 
 #include <sybfront.h>
 #include <sybdb.h>
@@ -1149,7 +1120,8 @@ MODRET cmd_escapestring(cmd_rec * cmd){
 
   conn_entry_t *entry = NULL;
   db_conn_t *conn = NULL;
-  
+  cmd_rec *close_cmd;
+
   char *unescaped = NULL;
   char *escaped = NULL;
   
@@ -1177,9 +1149,15 @@ MODRET cmd_escapestring(cmd_rec * cmd){
   unescaped = cmd->argv[1];
   escaped = (char *) pcalloc(cmd->tmp_pool, sizeof(char) * (strlen(unescaped) * 2) + 1);
   dbsafestr(conn->dbproc,unescaped,-1,escaped,-1,DBBOTH);
+  
   log_debug(DEBUG_FUNC, MOD_SQL_TDS_VERSION ": before: %s", unescaped);
   log_debug(DEBUG_FUNC, MOD_SQL_TDS_VERSION ": after: %s", escaped);
   log_debug(DEBUG_FUNC, MOD_SQL_TDS_VERSION ": exiting \tcmd_escapestring");
+  
+  /* close the connection, return the data. */
+  close_cmd = _sql_make_cmd( cmd->tmp_pool, 1, entry->name );
+  cmd_close(close_cmd);
+  SQL_FREE_CMD( close_cmd );
   return mod_create_data(cmd, (void *) escaped);
 }
 

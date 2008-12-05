@@ -1,6 +1,6 @@
 MOD_SQL_TDS
 
-This is a contributed Module For mod_sql that allows it to use an SQL Backend that speakes TDS.
+This is a contributed Module For mod_sql that allows it to use an SQL Backend that speaks TDS.
   (Currently Sybase and Microsoft SQL Server).
 
 

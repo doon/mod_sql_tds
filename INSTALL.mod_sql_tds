@@ -61,6 +61,3 @@ My Interface file for FreeTDS looks like this
         host = 10.1.0.xxx 
         port = 1433
         tds version = 7.0
-
-
-$Id: INSTALL.mod_sql_tds,v 1.4 2005/09/06 18:17:06 doon Exp $
