@@ -245,7 +245,7 @@ static modret_t *_build_data( cmd_rec *cmd, db_conn_t *conn ){
   sd = (sql_data_t *) pcalloc(cmd->tmp_pool, sizeof(sql_data_t));
   
   sd->fnum = (unsigned long) dbnumcols(conn->dbproc); /* Number of columns in the result */
-  sql_log(DEBUG_INFO, "%s", " %d columns in the result ", sd->fnum);
+  sql_log(DEBUG_INFO, "%d columns in the result ", sd->fnum);
   
   /*create datastructure to hold the results */
   row = (char **) pcalloc(cmd->tmp_pool, sizeof(char *) * sd->fnum);
@@ -291,7 +291,7 @@ static modret_t *_build_data( cmd_rec *cmd, db_conn_t *conn ){
   while (ptr != NULL){
     for(x=0;x<sd->fnum;x++){
       data[index++] = pstrdup(cmd->tmp_pool, ptr->data[x]);
-      sql_log(DEBUG_INFO,"%s", " copied %s to data[%d]",ptr->data[x], (index-1));
+      sql_log(DEBUG_INFO, "copied %s to data[%d]",ptr->data[x], (index-1));
     }
     ptr = ptr->next;
   }
