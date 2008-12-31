@@ -49,7 +49,7 @@
 /* 
  * Internal define used for debug and logging.  
  */
-#define MOD_SQL_TDS_VERSION "mod_sql_tds/4.8RC"
+#define MOD_SQL_TDS_VERSION "mod_sql_tds/4.8RC3"
 
 #include <sybfront.h>
 #include <sybdb.h>
@@ -206,28 +206,6 @@ static int _sql_timer_callback(CALLBACK_FRAME){
   return 0;
 }
 
-/* 
- * _sql_shutdown: walks the connection cache and closes every
- *  open connection, resetting their connection counts to 0.
- *?? This is the same as cmd_exit.  
- */
-/*static void _sql_shutdown(void){
-  conn_entry_t *entry = NULL;
-  int cnt = 0;
-  cmd_rec *cmd;
-
-  for (cnt=0; cnt < conn_cache->nelts; cnt++) {
-    entry = ((conn_entry_t **) conn_cache->elts)[cnt];
-
-    if (entry->connections > 0) {
-      cmd = _sql_make_cmd( conn_pool, 2, entry->name, "1" );
-      cmd_close( cmd );
-      SQL_FREE_CMD( cmd );
-    }
-  }
-  dbexit();
-   return;
-}*/
 
 /* 
  * _build_error: constructs a modret_t filled with error information;
@@ -372,8 +350,7 @@ MODRET cmd_open(cmd_rec *cmd){
   
   if(dbinit() == FAIL){
     pr_log_pri(PR_LOG_ERR, MOD_SQL_TDS_VERSION  ": failed to init database. Shutting down.");
-    sql_log(DEBUG_WARN, "%s", " failed to init tds database "
-	      "Shutting down.");
+    sql_log(DEBUG_WARN, "%s", " failed to init tds database! Shutting down.");
     end_login(1);
   }
   
@@ -382,8 +359,7 @@ MODRET cmd_open(cmd_rec *cmd){
   DBSETLPWD(login,conn->pass);
   DBSETLAPP(login,"proftpd");
   DBSETLUSER(login,conn->user);
-  sql_log(DEBUG_FUNC, "%s", "Adding user %s and password %s to login",
-			conn->user,conn->pass);
+  sql_log(DEBUG_FUNC, "Adding user %s and password %s to login", conn->user,conn->pass);
   sql_log(DEBUG_FUNC, "%s", "calling dbopen");
   conn->dbproc = dbopen(login,conn->server);
   
@@ -412,9 +388,8 @@ MODRET cmd_open(cmd_rec *cmd){
 			     &sql_tds_module, 
 			     _sql_timer_callback,
 				 "TDS Connection ttl"); 
-    sql_log(DEBUG_INFO,
-	      "connection '%s' - %d second timer started",
-	      entry->name, entry->ttl);
+    sql_log(DEBUG_INFO, "connection '%s' - %d second timer started",
+	        entry->name, entry->ttl);
 
     /* timed connections get re-bumped so they don't go away when cmd_close
      * is called.
@@ -424,10 +399,7 @@ MODRET cmd_open(cmd_rec *cmd){
 
   /* return HANDLED */
   
-  sql_log(DEBUG_INFO, "connection '%s' opened", entry->name);
-  
-  sql_log(DEBUG_INFO, "connection '%s' count is now %d", entry->name, entry->connections);
-  
+  sql_log(DEBUG_INFO, "connection '%s' opened count is now %d", entry->name, entry->connections);
   sql_log(DEBUG_FUNC, "%s", " exiting \ttds cmd_open");
   return HANDLED(cmd);
 }
@@ -1130,7 +1102,7 @@ MODRET cmd_escapestring(cmd_rec * cmd){
   conn_entry_t *entry = NULL;
   db_conn_t *conn = NULL;
   cmd_rec *close_cmd;
-
+  modret_t *cmr = NULL;
   char *unescaped = NULL;
   char *escaped = NULL;
   
@@ -1152,6 +1124,13 @@ MODRET cmd_escapestring(cmd_rec * cmd){
 
   conn = (db_conn_t *) entry->data;
   
+  /* Make sure the connection is opened */ 
+  cmr = cmd_open(cmd);
+  if (MODRET_ERROR(cmr)) {
+    sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_escapestring");
+    return cmr;
+  }
+
   /** 
    * Pass the unescaped to dbsafestr() to make it safe 
    */
