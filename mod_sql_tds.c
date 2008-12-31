@@ -49,7 +49,7 @@
 /* 
  * Internal define used for debug and logging.  
  */
-#define MOD_SQL_TDS_VERSION "mod_sql_tds/4.8RC3"
+#define MOD_SQL_TDS_VERSION "mod_sql_tds/4.8"
 
 #include <sybfront.h>
 #include <sybdb.h>
@@ -237,7 +237,7 @@ static modret_t *_build_data( cmd_rec *cmd, db_conn_t *conn ){
   tempdata_t *td, *ptr;
   int x, rcount = 0;
     
-  sql_log(DEBUG_FUNC, "%s", " entering \ttds _build_data");
+  sql_log(DEBUG_FUNC, "%s", " >>> tds _build_data");
   if (!conn) 
     return ERROR_MSG(cmd, MOD_SQL_TDS_VERSION, "badly formed request");
   
@@ -317,19 +317,19 @@ MODRET cmd_open(cmd_rec *cmd){
   db_conn_t *conn = NULL;
   LOGINREC *login;
   
-  sql_log(DEBUG_FUNC, "%s", "entering \ttds cmd_open");
+  sql_log(DEBUG_FUNC, "%s", ">>> tds cmd_open");
 
   _sql_check_cmd(cmd, "cmd_open" );
 
   if (cmd->argc < 1) {
-    sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_open with argc < 1");
+    sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_open with argc < 1");
     return ERROR_MSG(cmd, MOD_SQL_TDS_VERSION, "badly formed request");
   }    
 
   /* get the named connection */
 
   if (!(entry = _sql_get_connection( cmd->argv[0]))) {
-    sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_open");
+    sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_open");
     return ERROR_MSG(cmd, MOD_SQL_TDS_VERSION, "Unknown Named Connection");  } 
 
   conn = (db_conn_t *) entry->data;
@@ -344,7 +344,7 @@ MODRET cmd_open(cmd_rec *cmd){
       pr_timer_reset( entry->timer, &sql_tds_module );
     }
     sql_log(DEBUG_INFO, "connection '%s' count is now %d", entry->name, entry->connections);
-    sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_open");
+    sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_open");
     return HANDLED(cmd);
   }
   
@@ -400,7 +400,7 @@ MODRET cmd_open(cmd_rec *cmd){
   /* return HANDLED */
   
   sql_log(DEBUG_INFO, "connection '%s' opened count is now %d", entry->name, entry->connections);
-  sql_log(DEBUG_FUNC, "%s", " exiting \ttds cmd_open");
+  sql_log(DEBUG_FUNC, "%s", " <<< tds cmd_open");
   return HANDLED(cmd);
 }
 
@@ -425,18 +425,18 @@ MODRET cmd_close(cmd_rec *cmd){
   conn_entry_t *entry = NULL;
   db_conn_t *conn = NULL;
 
-  sql_log(DEBUG_FUNC, "%s", "entering \ttds cmd_close");
+  sql_log(DEBUG_FUNC, "%s", ">>> tds cmd_close");
 
   _sql_check_cmd(cmd, "cmd_close");
   
   if ((cmd->argc < 1) || (cmd->argc > 2)) {
-    sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_close --badly formed request");
+    sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_close --badly formed request");
     return ERROR_MSG(cmd, MOD_SQL_TDS_VERSION, "badly formed request");
   }
 
   /* get the named connection */
   if (!(entry = _sql_get_connection( cmd->argv[0] ))) {
-    sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_close -- unknown named connection");
+    sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_close -- unknown named connection");
     return ERROR_MSG(cmd, MOD_SQL_TDS_VERSION, "Unknown Named Connection");
   }
   
@@ -446,7 +446,7 @@ MODRET cmd_close(cmd_rec *cmd){
   if (entry->connections == 0) {
     sql_log(DEBUG_INFO, "connection '%s' count is now %d", entry->name, entry->connections);
     
-    sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_close - connections = 0");
+    sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_close - connections = 0");
     
     return HANDLED(cmd);
   }
@@ -472,7 +472,7 @@ MODRET cmd_close(cmd_rec *cmd){
   }
 
   sql_log(DEBUG_INFO, "connection '%s' count is now %d", entry->name, entry->connections);
-  sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_close");
+  sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_close");
   
   return HANDLED(cmd);
 }
@@ -511,12 +511,12 @@ MODRET cmd_defineconnection(cmd_rec *cmd){
   conn_entry_t *entry = NULL;
   db_conn_t *conn = NULL; 
   
-  sql_log(DEBUG_FUNC, "%s", "entering \ttds cmd_defineconnection");
+  sql_log(DEBUG_FUNC, "%s", ">>> tds cmd_defineconnection");
   
   _sql_check_cmd(cmd, "cmd_defineconnection");
   
   if ((cmd->argc < 4) || (cmd->argc > 5) || (!cmd->argv[0])) {
-    sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_defineconnection - invalid argv count");
+    sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_defineconnection - invalid argv count");
     return ERROR_MSG(cmd, MOD_SQL_TDS_VERSION, "badly formed request");
   }
   
@@ -528,7 +528,7 @@ MODRET cmd_defineconnection(cmd_rec *cmd){
     sql_log(DEBUG_FUNC, "%s", "The mod_sql_tds module has not been properly "
       "initialized.  Please make sure your --with-modules configure option "
       "lists mod_sql *before* mod_sql_tds, and recompile.");
-    sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_defineconnection");
+    sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_defineconnection");
 
     return PR_ERROR_MSG(cmd, MOD_SQL_TDS_VERSION, "uninitialized module");
   }
@@ -566,7 +566,7 @@ MODRET cmd_defineconnection(cmd_rec *cmd){
   
   /* insert the new conn_info into the connection hash */
   if (!(entry = _sql_add_connection(conn_pool, name, (void *) conn))) {
-    sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_defineconnection");
+    sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_defineconnection");
     return ERROR_MSG(cmd, MOD_SQL_TDS_VERSION, "Named Connection Already Exists");
   }
 
@@ -583,7 +583,7 @@ MODRET cmd_defineconnection(cmd_rec *cmd){
   sql_log(DEBUG_INFO, "  server: '%s'", conn->server);
   sql_log(DEBUG_INFO, "      db: '%s'", conn->db);
   sql_log(DEBUG_INFO, "     ttl: '%d'", entry->ttl);
-  sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_defineconnection");
+  sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_defineconnection");
   return HANDLED(cmd);
 }
 
@@ -594,7 +594,7 @@ MODRET cmd_defineconnection(cmd_rec *cmd){
 static modret_t *cmd_exit(cmd_rec *cmd) {
   register unsigned int cnt = 0;
   
-  sql_log(DEBUG_FUNC,"%s","entering \ttds cmd_exit");
+  sql_log(DEBUG_FUNC,"%s",">>> tds cmd_exit");
   conn_entry_t *entry = NULL;
 
   for (cnt=0; cnt < conn_cache->nelts; cnt++) {
@@ -607,7 +607,7 @@ static modret_t *cmd_exit(cmd_rec *cmd) {
     }
   }
   dbexit();  /* magic cleanup routine will clean up any remaining dbprocess that we might have missed */
-  sql_log(DEBUG_FUNC,"%s","exiting \ttds cmd_exit");
+  sql_log(DEBUG_FUNC,"%s","<<< tds cmd_exit");
   return HANDLED(cmd);
 }
 
@@ -660,19 +660,19 @@ MODRET cmd_select(cmd_rec *cmd){
   int cnt = 0;
   cmd_rec *close_cmd;
 
-  sql_log(DEBUG_FUNC, "%s", "entering \ttds cmd_select");
+  sql_log(DEBUG_FUNC, "%s", ">>> tds cmd_select");
 
   _sql_check_cmd(cmd, "cmd_select");
 
   if (cmd->argc < 2) {
-    sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_select - Argc < 2");
+    sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_select - Argc < 2");
     return ERROR_MSG(cmd, MOD_SQL_TDS_VERSION, "badly formed request");
   }
 
   /* get the named connection */
   entry = _sql_get_connection( cmd->argv[0] );
   if (!entry) {
-    sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_select - Failed to get Entry");
+    sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_select - Failed to get Entry");
    return ERROR_MSG(cmd, MOD_SQL_TDS_VERSION, "Unknown Named Connection");
   }
   
@@ -680,7 +680,7 @@ MODRET cmd_select(cmd_rec *cmd){
 
   cmr = cmd_open(cmd);
   if (MODRET_ERROR(cmr)) {
-    sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_select - error in cmd_open");
+    sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_select - error in cmd_open");
     return cmr;
   }
 
@@ -725,7 +725,7 @@ MODRET cmd_select(cmd_rec *cmd){
     cmd_close(close_cmd);
     SQL_FREE_CMD( close_cmd );
 
-    sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_select DBSQLEXEC != SUCCEED");
+    sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_select DBSQLEXEC != SUCCEED");
     return dmr;
   }
 
@@ -735,7 +735,7 @@ MODRET cmd_select(cmd_rec *cmd){
     cmd_close(close_cmd);
     SQL_FREE_CMD( close_cmd );
     
-    sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_select DBRESULTS == FAIL");
+    sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_select DBRESULTS == FAIL");
     return dmr;
   }
   
@@ -744,7 +744,7 @@ MODRET cmd_select(cmd_rec *cmd){
    */
   dmr = _build_data( cmd, conn );
   if (MODRET_ERROR(dmr)) {
-    sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_select");
+    sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_select");
     
     close_cmd = _sql_make_cmd( cmd->tmp_pool, 1, entry->name );
     cmd_close(close_cmd);
@@ -758,7 +758,7 @@ MODRET cmd_select(cmd_rec *cmd){
   cmd_close(close_cmd);
   SQL_FREE_CMD( close_cmd );
   
-  sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_select (normal)");
+  sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_select (normal)");
   return dmr;
 }
 
@@ -801,19 +801,19 @@ MODRET cmd_insert(cmd_rec *cmd){
   char *query = NULL;
   cmd_rec *close_cmd;
 
-  sql_log(DEBUG_FUNC, "%s", "entering \ttds cmd_insert");
+  sql_log(DEBUG_FUNC, "%s", ">>> tds cmd_insert");
 
   _sql_check_cmd(cmd, "cmd_insert");
 
   if ((cmd->argc != 2) && (cmd->argc != 4)) {
-    sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_insert");
+    sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_insert");
     return ERROR_MSG(cmd, MOD_SQL_TDS_VERSION, "badly formed request");
   }
 
   /* get the named connection */
   entry = _sql_get_connection( cmd->argv[0] );
   if (!entry) {
-    sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_insert");
+    sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_insert");
     return ERROR_MSG(cmd, MOD_SQL_TDS_VERSION, "Unknown named connection");
   }
 
@@ -821,7 +821,7 @@ MODRET cmd_insert(cmd_rec *cmd){
 
   cmr = cmd_open(cmd);
   if (MODRET_ERROR(cmr)) {
-    sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_insert");
+    sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_insert");
     return cmr;
   }
   
@@ -851,7 +851,7 @@ MODRET cmd_insert(cmd_rec *cmd){
     cmd_close(close_cmd);
     SQL_FREE_CMD( close_cmd );
 
-    sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_insert");
+    sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_insert");
     return dmr;
   }
 
@@ -860,7 +860,7 @@ MODRET cmd_insert(cmd_rec *cmd){
   cmd_close(close_cmd);
   SQL_FREE_CMD( close_cmd );
 
-  sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_insert");
+  sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_insert");
   return HANDLED(cmd);
 }
 
@@ -892,18 +892,18 @@ MODRET cmd_update(cmd_rec *cmd){
   char *query = NULL;
   cmd_rec *close_cmd;
 
-  sql_log(DEBUG_FUNC, "%s", "entering \ttds cmd_update");
+  sql_log(DEBUG_FUNC, "%s", ">>> tds cmd_update");
 
   _sql_check_cmd(cmd, "cmd_update");
 
   if ((cmd->argc < 2) || (cmd->argc > 4)) {
-    sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_update");
+    sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_update");
     return ERROR_MSG(cmd, MOD_SQL_TDS_VERSION, "badly formed request");  }
 
   /* get the named connection */
   entry = _sql_get_connection( cmd->argv[0] );
   if (!entry) {
-    sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_update");
+    sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_update");
     return ERROR_MSG(cmd, MOD_SQL_TDS_VERSION, "Unknown Named Connection");
   }
 
@@ -911,7 +911,7 @@ MODRET cmd_update(cmd_rec *cmd){
 
   cmr = cmd_open(cmd);
   if (MODRET_ERROR(cmr)) {
-    sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_update");
+    sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_update");
     return cmr;
   }
 
@@ -941,7 +941,7 @@ MODRET cmd_update(cmd_rec *cmd){
     cmd_close(close_cmd);
     SQL_FREE_CMD( close_cmd );
     
-    sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_update");
+    sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_update");
     return dmr;
   }
   
@@ -950,7 +950,7 @@ MODRET cmd_update(cmd_rec *cmd){
   cmd_close(close_cmd);
   SQL_FREE_CMD( close_cmd );
   
-  sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_update");
+  sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_update");
   return HANDLED(cmd);
 }
 
@@ -974,17 +974,17 @@ MODRET cmd_update(cmd_rec *cmd){
  */
 MODRET cmd_procedure(cmd_rec *cmd)
 {
-  sql_log(DEBUG_FUNC, "%s", "entering \ttds cmd_procedure");
+  sql_log(DEBUG_FUNC, "%s", ">>> tds cmd_procedure");
 
   _sql_check_cmd(cmd, "cmd_procedure");
   
   if (cmd->argc != 3) {
-    sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_procedure");
+    sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_procedure");
     return ERROR_MSG(cmd, MOD_SQL_TDS_VERSION, "badly formed request");  }
 
   /* TDS has procedures, just need to write code to do it */
 
-  sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_procedure");
+  sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_procedure");
   
   return ERROR_MSG(cmd, MOD_SQL_TDS_VERSION, "backend does not support procedures -- YET!");
 }
@@ -1016,19 +1016,19 @@ MODRET cmd_query(cmd_rec *cmd){
   char *query = NULL;
   cmd_rec *close_cmd;
 
-  sql_log(DEBUG_FUNC, "%s", "entering \ttds cmd_query");
+  sql_log(DEBUG_FUNC, "%s", ">>> tds cmd_query");
 
   _sql_check_cmd(cmd, "cmd_query");
 
   if (cmd->argc != 2) {
-    sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_query");
+    sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_query");
     return ERROR_MSG(cmd, MOD_SQL_TDS_VERSION, "badly formed request");
   }
 
   /* get the named connection */
   entry = _sql_get_connection( cmd->argv[0] );
   if (!entry) {
-    sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_query");
+    sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_query");
     return ERROR_MSG(cmd, MOD_SQL_TDS_VERSION, "unknown named connection");
   }
   
@@ -1036,7 +1036,7 @@ MODRET cmd_query(cmd_rec *cmd){
   
   cmr = cmd_open(cmd);
   if (MODRET_ERROR(cmr)) {
-    sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_query");
+    sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_query");
     return cmr;
   }
   
@@ -1058,7 +1058,7 @@ MODRET cmd_query(cmd_rec *cmd){
     cmd_close(close_cmd);
     SQL_FREE_CMD( close_cmd );
     
-    sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_query");
+    sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_query");
     return dmr;
   }
 
@@ -1069,7 +1069,7 @@ MODRET cmd_query(cmd_rec *cmd){
   if ( dbnumcols( conn->dbproc ) ) {
     dmr = _build_data( cmd, conn );
     if (MODRET_ERROR(dmr)) {
-      sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_query");
+      sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_query");
     }
   } else {
     dmr = HANDLED(cmd);
@@ -1080,7 +1080,7 @@ MODRET cmd_query(cmd_rec *cmd){
   cmd_close(close_cmd);
   SQL_FREE_CMD( close_cmd );
   
-  sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_query");
+  sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_query");
   return dmr;
 }
 
@@ -1106,19 +1106,19 @@ MODRET cmd_escapestring(cmd_rec * cmd){
   char *unescaped = NULL;
   char *escaped = NULL;
   
-  sql_log(DEBUG_FUNC, "%s", "entering \ttds cmd_escapestring");
+  sql_log(DEBUG_FUNC, "%s", ">>> tds cmd_escapestring");
 
   _sql_check_cmd(cmd, "cmd_escapestring");
 
   if (cmd->argc != 2) {
-    sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_escapestring");
+    sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_escapestring");
     return ERROR_MSG(cmd, MOD_SQL_TDS_VERSION, "badly formed request");
   }
 
   /* get the named connection */
   entry = _sql_get_connection( cmd->argv[0] );
   if (!entry) {
-    sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_escapestring");
+    sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_escapestring");
    return ERROR_MSG(cmd, MOD_SQL_TDS_VERSION, "unknown named connectiont");
   }
 
@@ -1127,7 +1127,7 @@ MODRET cmd_escapestring(cmd_rec * cmd){
   /* Make sure the connection is opened */ 
   cmr = cmd_open(cmd);
   if (MODRET_ERROR(cmr)) {
-    sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_escapestring");
+    sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_escapestring");
     return cmr;
   }
 
@@ -1139,7 +1139,7 @@ MODRET cmd_escapestring(cmd_rec * cmd){
   dbsafestr(conn->dbproc,unescaped,-1,escaped,-1,DBBOTH);
   
   sql_log(DEBUG_FUNC, "before: '%s' after '%s'", unescaped,escaped);
-  sql_log(DEBUG_FUNC, "%s", "exiting \ttds cmd_escapestring");
+  sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_escapestring");
   
   /* close the connection, return the data. */
   close_cmd = _sql_make_cmd( cmd->tmp_pool, 1, entry->name );
@@ -1171,7 +1171,7 @@ MODRET cmd_escapestring(cmd_rec * cmd){
  *  return ERROR.
  */
 MODRET cmd_checkauth(cmd_rec * cmd){
-  sql_log(DEBUG_FUNC, "%s", "entering \ttds cmd_checkauth");
+  sql_log(DEBUG_FUNC, "%s", ">>> tds cmd_checkauth");
   _sql_check_cmd(cmd, "cmd_checkauth");
   /* don't support this at the moment */
   return ERROR_MSG(cmd, MOD_SQL_TDS_VERSION, "backend does not support check_auth");

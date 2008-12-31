@@ -2,7 +2,7 @@ INSTALLING:
 
 Obtain and install TDS libraries.
 We use FreeTDS <http://www.freetds.org>.
-Make sure you get version 0.61 or later of FreeTDS.
+
 
 This module should work the the SYBASE ASE Libraries but since I don't have them, or a platform that they run on
 I cannot test them.  If someone gets them to work, please let me know.
@@ -21,18 +21,21 @@ On my system this command looks like this
 
 ./configure --with-modules=mod_sql:mod_sql_tds \
 	    --with-libraries=/usr/local/lib  \
-            --with-includes=/usr/local/include 
+      --with-includes=/usr/local/include 
 
 
 DIRECTIVES
 
 All directives are the same as mod_sql.
-Excpet for a slight change to SQLConnectInfo:
+Except for a slight change to SQLConnectInfo:
 
 The change here is that server must be specified in your interfaces file.
 If you omit server, the module will look to see if you have one specified in the DSQUERY enviroment variable
 if that doesn't exist we will exit. 
 
+CAVEAT:  Due to the way FreeTDS(and sybase) libs appear to work. PERCALL + A Default chroot will probably give you problems at best, or flat out not work.  The short reason is that the TDS libs need access to the interfaces or freetds.conf file, and once you chroot, the process cannot access the file, and will not be able to open the DB.  PERSESSION (the default) will work just fine as the DB connection is opened prior to the chroot.
+
+  
 My Conf looks like this 
 
 ##
