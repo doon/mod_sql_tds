@@ -49,7 +49,7 @@
 /* 
  * Internal define used for debug and logging.  
  */
-#define MOD_SQL_TDS_VERSION "mod_sql_tds/4.8"
+#define MOD_SQL_TDS_VERSION "mod_sql_tds/4.9RC"
 
 #include <sybfront.h>
 #include <sybdb.h>
@@ -361,6 +361,15 @@ MODRET cmd_open(cmd_rec *cmd){
   DBSETLUSER(login,conn->user);
   sql_log(DEBUG_FUNC, "Adding user %s and password %s to login", conn->user,conn->pass);
   sql_log(DEBUG_FUNC, "%s", "calling dbopen");
+ 
+  #ifdef PR_USE_NLS
+	//We actually need to set the Char encoding before we open the connection
+	if (pr_encode_get_encoding() != NULL){
+		DBSETLCHARSET(login,pr_encode_get_charset());
+		sql_log(DEBUG_FUNC,"Setting Client Character Set to '%s'",pr_encode_get_charset());
+	}
+   #endif /* !PR_USE_NLS */
+
   conn->dbproc = dbopen(login,conn->server);
   
   //free the login rec. 
@@ -372,12 +381,19 @@ MODRET cmd_open(cmd_rec *cmd){
     end_login(1);
   }
   
+  #ifdef PR_USE_NLS
+  /* well if we attempted to set the char set above, we should report what the client and server are using here */
+  sql_log(DEBUG_FUNC,"Client Character set '%s'", dbgetcharset(conn->dbproc));
+  sql_log(DEBUG_FUNC,"Server Character set '%s'", dbservcharset(conn->dbproc));
+  #endif /* !PR_USE_NLS */
+
   sql_log(DEBUG_FUNC, "attempting to switch to database: %s", conn->db);
   if(dbuse(conn->dbproc, conn->db) == FAIL){
     pr_log_pri(PR_LOG_ERR, MOD_SQL_TDS_VERSION ": failed to use database Shutting down.");
     sql_log(DEBUG_WARN, "%s", " failed to use database Shutting down.");
     end_login(1);
   }
+
 
   /* bump connections */
   entry->connections++;
