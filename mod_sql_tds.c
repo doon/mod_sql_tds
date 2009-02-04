@@ -49,7 +49,7 @@
 /* 
  * Internal define used for debug and logging.  
  */
-#define MOD_SQL_TDS_VERSION "mod_sql_tds/4.9RC"
+#define MOD_SQL_TDS_VERSION "mod_sql_tds/4.9"
 
 #include <sybfront.h>
 #include <sybdb.h>
@@ -364,6 +364,10 @@ MODRET cmd_open(cmd_rec *cmd){
  
   #ifdef PR_USE_NLS
 	//We actually need to set the Char encoding before we open the connection
+	// according to 
+	// http://manuals.sybase.com:80/onlinebooks/group-cnarc/cng1110e/dblib/@Generic__BookTextView/37135;pt=37135#X
+	//  The Client picks a default char and the server does conversions between the local and server sets.  
+	// This should override any char set, that was set in your interfaces file
 	if (pr_encode_get_encoding() != NULL){
 		DBSETLCHARSET(login,pr_encode_get_charset());
 		sql_log(DEBUG_FUNC,"Setting Client Character Set to '%s'",pr_encode_get_charset());
@@ -381,12 +385,6 @@ MODRET cmd_open(cmd_rec *cmd){
     end_login(1);
   }
   
-  #ifdef PR_USE_NLS
-  /* well if we attempted to set the char set above, we should report what the client and server are using here */
-  sql_log(DEBUG_FUNC,"Client Character set '%s'", dbgetcharset(conn->dbproc));
-  sql_log(DEBUG_FUNC,"Server Character set '%s'", dbservcharset(conn->dbproc));
-  #endif /* !PR_USE_NLS */
-
   sql_log(DEBUG_FUNC, "attempting to switch to database: %s", conn->db);
   if(dbuse(conn->dbproc, conn->db) == FAIL){
     pr_log_pri(PR_LOG_ERR, MOD_SQL_TDS_VERSION ": failed to use database Shutting down.");
