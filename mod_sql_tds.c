@@ -49,7 +49,7 @@
 /* 
  * Internal define used for debug and logging.  
  */
-#define MOD_SQL_TDS_VERSION "mod_sql_tds/4.9"
+#define MOD_SQL_TDS_VERSION "mod_sql_tds/4.10"
 
 #include <sybfront.h>
 #include <sybdb.h>
@@ -1228,6 +1228,44 @@ MODRET cmd_identify(cmd_rec * cmd){
   return mod_create_data(cmd, (void *) sd);
 }  
 
+/*
+ * cmd_cleanup: cleans up any initialisations made during module preparations
+ *  (see cmd_prepre).
+ *
+ * Inputs:
+ *  None.
+ *
+ * Returns:
+ *  Success.
+ */
+MODRET cmd_cleanup(cmd_rec *cmd) {
+	destroy_pool(conn_pool);
+	conn_pool = NULL;
+	conn_cache = NULL;
+	return mod_create_data(cmd, NULL);
+}
+
+/*
+ * cmd_prepare: prepares this mod_sql_mysql module for running.
+ *
+ * Inputs:
+ *  cmd->argv[0]:  A pool to be used for any necessary preparations.
+ *
+ * Returns:
+ *  Success.
+ */
+MODRET cmd_prepare(cmd_rec *cmd) {
+	if (cmd->argc != 1) {
+		return PR_ERROR(cmd);
+	}
+ 
+	conn_pool = (pool *) cmd->argv[0];
+	conn_cache = make_array((pool *) cmd->argv[0], DEF_CONN_POOL_SIZE,
+		sizeof(conn_entry_t *));
+ 
+	return mod_create_data(cmd, NULL);
+}
+
 /* 
  * sql_tds_cmdtable: mod_sql requires each backend module to define a cmdtable
  *  with this exact name. ALL these functions must be defined; mod_sql checks
@@ -1247,6 +1285,8 @@ cmdtable sql_tds_cmdtable[] = {
   { CMD, "sql_escapestring",     G_NONE, cmd_escapestring,     FALSE, FALSE },
   { CMD, "sql_checkauth",        G_NONE, cmd_checkauth,        FALSE, FALSE },
   { CMD, "sql_identify",         G_NONE, cmd_identify,         FALSE, FALSE },
+  { CMD, "sql_cleanup",		 G_NONE, cmd_cleanup,	       FALSE, FALSE },
+  { CMD, "sql_prepare",		 G_NONE, cmd_prepare,	       FALSE, FALSE },
 
   { 0, NULL }
 };
@@ -1301,7 +1341,7 @@ static int sql_tds_init(void) {
 static int sql_tds_sess_init(void){
   conn_pool = make_sub_pool(session.pool);
   conn_cache = make_array(make_sub_pool(session.pool), DEF_CONN_POOL_SIZE,
-    sizeof(conn_entry_t));
+    sizeof(conn_entry_t *));
   return 0;
 }
 
