@@ -49,7 +49,7 @@
 /* 
  * Internal define used for debug and logging.  
  */
-#define MOD_SQL_TDS_VERSION "mod_sql_tds/4.10"
+#define MOD_SQL_TDS_VERSION "mod_sql_tds/4.11"
 
 #include <sybfront.h>
 #include <sybdb.h>
@@ -1260,9 +1260,10 @@ MODRET cmd_prepare(cmd_rec *cmd) {
 	}
  
 	conn_pool = (pool *) cmd->argv[0];
-	conn_cache = make_array((pool *) cmd->argv[0], DEF_CONN_POOL_SIZE,
-		sizeof(conn_entry_t *));
- 
+	if (conn_cache == NULL) {
+		conn_cache = make_array((pool *) cmd->argv[0], DEF_CONN_POOL_SIZE,
+		   sizeof(conn_entry_t *));
+	} 
 	return mod_create_data(cmd, NULL);
 }
 
@@ -1340,8 +1341,11 @@ static int sql_tds_init(void) {
  */
 static int sql_tds_sess_init(void){
   conn_pool = make_sub_pool(session.pool);
-  conn_cache = make_array(make_sub_pool(session.pool), DEF_CONN_POOL_SIZE,
-    sizeof(conn_entry_t *));
+  if( conn_cache == NULL ) {
+  	conn_cache = make_array(make_sub_pool(session.pool), DEF_CONN_POOL_SIZE,
+            sizeof(conn_entry_t *));
+  }
+
   return 0;
 }
 
