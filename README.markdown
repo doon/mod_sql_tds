@@ -23,17 +23,17 @@ Copy mod_sql_tds.c to ${PROFTPD_SRC}/contrib/
 
 cd ${PROFTPD_SRC} 
 
-  ./configure --with-modules=mod_sql:mod_sql_tds \
-	   --with-libraries=$SYBASE/lib  \
-	    --with-includes=$SYABSE/include
+> ./configure --with-modules=mod_sql:mod_sql_tds \
+>             --with-libraries=$SYBASE/lib  \
+?	            --with-includes=$SYABSE/include
 
 then make && install as usual.
 
 On my system this command looks like this
 
-  ./configure --with-modules=mod_sql:mod_sql_tds \
-	    --with-libraries=/usr/local/lib  \
-      --with-includes=/usr/local/include 
+> ./configure --with-modules=mod_sql:mod_sql_tds \
+>             --with-libraries=/usr/local/lib  \
+>             --with-includes=/usr/local/include 
 
 DIRECTIVES
 ----------
@@ -49,29 +49,26 @@ CAVEAT:  Due to the way FreeTDS(and sybase) libs appear to work. PERCALL + A Def
 
 My Conf looks like this 
 
-##
-## SQL Server Database Backend
-##
-AuthPAMAuthoritative Off
-SQLConnectInfo INOC@sql0 username password
-SQLAuthTypes Plaintext
-SQLUserInfo tbl_ftp_user userid passwd uid gid home shell
-RequireValidShell off
-SQLGroupInfo tbl_ftp_groups groupname gid members
-SQLAuthenticate on
-SQLLog PASS updatecount
-SQLNamedQuery updatecount UPDATE "count=count+1 WHERE userid='%u'" tbl_ftp_user
-SQLDefaultGID 500
-SQLMinUserGID 400
+>AuthPAMAuthoritative Off
+>SQLConnectInfo INOC@sql0 username password
+>SQLAuthTypes Plaintext
+>SQLUserInfo tbl_ftp_user userid passwd uid gid home shell
+>RequireValidShell off
+>SQLGroupInfo tbl_ftp_groups groupname gid members
+>SQLAuthenticate on
+>SQLLog PASS updatecount
+>SQLNamedQuery updatecount UPDATE "count=count+1 WHERE userid='%u'" tbl_ftp_user
+>SQLDefaultGID 500
+>SQLMinUserGID 400
 
 
 My Interface file for FreeTDS looks like this 
 
-[SQL0]
-        host = 10.0.0.xxx
-        port = 1433
-        tds version = 7.0
-[SQL1]
-        host = 10.1.0.xxx 
-        port = 1433
-        tds version = 7.0
+>[SQL0]
+>        host = 10.0.0.xxx
+>        port = 1433
+>        tds version = 7.0
+>[SQL1]
+>        host = 10.1.0.xxx 
+>        port = 1433
+>        tds version = 7.0
