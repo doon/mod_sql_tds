@@ -49,7 +49,7 @@
 /* 
  * Internal define used for debug and logging.  
  */
-#define MOD_SQL_TDS_VERSION "mod_sql_tds/4.12-pre"
+#define MOD_SQL_TDS_VERSION "mod_sql_tds/4.12"
 
 #include <sybfront.h>
 #include <sybdb.h>
@@ -233,7 +233,7 @@ static modret_t *_build_data( cmd_rec *cmd, db_conn_t *conn ){
   char **data = NULL;
   unsigned long cnt = 0;
   unsigned long index = 0;
-  char **row = NULL;
+  BYTE **row = NULL;
   tempdata_t *td, *ptr;
   int x, rcount = 0;
     
@@ -248,7 +248,7 @@ static modret_t *_build_data( cmd_rec *cmd, db_conn_t *conn ){
   sql_log(DEBUG_INFO, "%d columns in the result ", sd->fnum);
   
   /*create datastructure to hold the results */
-  row = (char **) pcalloc(cmd->tmp_pool, sizeof(char *) * sd->fnum);
+  row = (BYTE **) pcalloc(cmd->tmp_pool, sizeof(BYTE *) * sd->fnum);
   
   /* setup the temp storage to hold all of our data here */
   td = (tempdata_t *)pcalloc(cmd->tmp_pool, sizeof(tempdata_t));
@@ -261,7 +261,7 @@ static modret_t *_build_data( cmd_rec *cmd, db_conn_t *conn ){
   
   /* need to bind the columns for our results */
   for (x=0;x<sd->fnum;x++){
-    row[x] = (char *)pcalloc(cmd->tmp_pool, 256);
+    row[x] = (BYTE *)pcalloc(cmd->tmp_pool, 256);
     dbbind(conn->dbproc, x+1, STRINGBIND, (DBINT) 0, row[x]);
   }
   
@@ -277,7 +277,7 @@ static modret_t *_build_data( cmd_rec *cmd, db_conn_t *conn ){
     
     /* add onto our temp record */
     for(x=0;x<sd->fnum;x++){
-      ptr->data[x] = pstrdup(cmd->tmp_pool, row[x]);
+      ptr->data[x] = pstrdup(cmd->tmp_pool, (char*)row[x]);
     }
     rcount++; /* done with this row -- inc to the next */
   }
