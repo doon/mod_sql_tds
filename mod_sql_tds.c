@@ -2,11 +2,11 @@
  * ProFTPD: mod_tds -- Support for connecting to TDS databases.
  *                     Microsoft SQL Server /  Sybase ASE
  *
- * Copyright (c) 2001-2008 Patrick Muldoon 
+ * Copyright (c) 2001-2010 Patrick Muldoon 
  * From code borrowed from mod_sql_mysql
  * Copyright (c) 2001 Andrew Houghton
  * Copyright (c) 2004-2005 TJ Saunders
- *  
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -49,7 +49,7 @@
 /* 
  * Internal define used for debug and logging.  
  */
-#define MOD_SQL_TDS_VERSION "mod_sql_tds/4.11"
+#define MOD_SQL_TDS_VERSION "mod_sql_tds/4.12-pre"
 
 #include <sybfront.h>
 #include <sybdb.h>
@@ -567,7 +567,7 @@ MODRET cmd_defineconnection(cmd_rec *cmd){
     sql_log(DEBUG_WARN, "%s", "No Host Specified! \t Checking Enviroment Variable");
     server = getenv("DSQUERY");
     if(server == NULL){
-      log_pri(PR_LOG_ERR, "%s", "NO Host Specified and DSQUERY Enviroment Variable NOT Found! "
+      pr_log_pri(PR_LOG_ERR, "%s", "NO Host Specified and DSQUERY Enviroment Variable NOT Found! "
 	      "-- Shutting down!.");
       sql_log(DEBUG_WARN, "%s", "NO Host Specified and DSQUERY Enviroment Variable NOT Found! "
 		"-- Shutting down!.");
