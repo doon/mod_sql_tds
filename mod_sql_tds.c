@@ -2,7 +2,7 @@
  * ProFTPD: mod_tds -- Support for connecting to TDS databases.
  *                     Microsoft SQL Server /  Sybase ASE
  *
- * Copyright (c) 2001-2010 Patrick Muldoon 
+ * Copyright (c) 2001-2010 Patrick Muldoon
  * From code borrowed from mod_sql_mysql
  * Copyright (c) 2001 Andrew Houghton
  * Copyright (c) 2004-2005 TJ Saunders
@@ -38,18 +38,18 @@
  * Updated versions can always be found at http://labratsoftware.com/mod_sql_tds/
  *
  * COMMENTS / QUESTIONS / BUGS(not like there will be any bugs right?):
- * 
- * Can be sent to me Patrick Muldoon(doon@inoc.net). 
- * 
+ *
+ * Can be sent to me Patrick Muldoon(doon@inoc.net).
+ *
  * Thanks to Noah Roberts From Reachone for his patch correcting an error in cmd_select
  *
  */
 
 
-/* 
- * Internal define used for debug and logging.  
+/*
+ * Internal define used for debug and logging.
  */
-#define MOD_SQL_TDS_VERSION "mod_sql_tds/4.12"
+#define MOD_SQL_TDS_VERSION "mod_sql_tds/4.13"
 
 #include <sybfront.h>
 #include <sybdb.h>
@@ -66,9 +66,8 @@ module sql_tds_module;
 
 #define ARBITRARY_MAX 256;
 
-/* 
- * db_conn_struct: 
- * 
+/*
+ * db_conn_struct:
  */
 struct db_conn_struct {
 
@@ -76,7 +75,7 @@ struct db_conn_struct {
   char *user;         /* User to access the server        */
   char *pass;         /* Password                         */
   char *db;           /* What Database Are we using       */
-  
+
   DBPROCESS *dbproc;  /* Our connection to the DB         */
 };
 
@@ -134,11 +133,11 @@ static conn_entry_t *_sql_get_connection(char *name){
       return entry;
     }
   }
-  
+
   return NULL;
 }
 
-/* 
+/*
  * _sql_add_connection: internal helper function to maintain a cache of 
  *  connections.  Since we expect the number of named connections to
  *  be small, simply use an array header to hold them.  We don't allow 
@@ -151,7 +150,7 @@ static void *_sql_add_connection(pool *p, char *name, db_conn_t *conn){
   conn_entry_t *entry = NULL;
 
   if ((!name) || (!conn) || (!p)) return NULL;
-  
+
   if (_sql_get_connection(name)) {
     /* duplicated name */
     return NULL;
@@ -175,7 +174,7 @@ static void _sql_check_cmd(cmd_rec *cmd, char *msg){
     pr_log_pri(PR_LOG_ERR, MOD_SQL_TDS_VERSION ": '%s' was passed an invalid cmd_rec. Shutting down.", msg);
     sql_log(DEBUG_WARN, "'%s' was passed an invalid cmd_rec. Shutting down.", msg);
     end_login(1);
-  }    
+  }
 
   return;
 }
@@ -189,7 +188,7 @@ static int _sql_timer_callback(CALLBACK_FRAME){
   conn_entry_t *entry = NULL;
   int cnt = 0;
   cmd_rec *cmd = NULL;
- 
+
   for (cnt=0; cnt < conn_cache->nelts; cnt++) {
     entry = ((conn_entry_t **) conn_cache->elts)[cnt];
 
@@ -207,28 +206,28 @@ static int _sql_timer_callback(CALLBACK_FRAME){
 }
 
 
-/* 
+/*
  * _build_error: constructs a modret_t filled with error information;
  */
 static modret_t *_build_error( cmd_rec *cmd, db_conn_t *conn ){
-  
+
   char num[20] = {'\0'};
   snprintf(num, 20, "%u", 1234);
   if (!conn){
     return ERROR_MSG(cmd, MOD_SQL_TDS_VERSION, "badly formed request");
   }
-  
+
   return ERROR_MSG(cmd, num, "An Internal Error Occured");
 }
 
 /*
  * _build_data: both cmd_select and cmd_procedure potentially
  *  return data to mod_sql; this function builds a modret to return
- *  that data.  
+ *  that data.
  *  Once we get here, we have rows to return, do it here
  */
 static modret_t *_build_data( cmd_rec *cmd, db_conn_t *conn ){
-  
+
   sql_data_t *sd = NULL;
   char **data = NULL;
   unsigned long cnt = 0;
@@ -236,35 +235,35 @@ static modret_t *_build_data( cmd_rec *cmd, db_conn_t *conn ){
   BYTE **row = NULL;
   tempdata_t *td, *ptr;
   int x, rcount = 0;
-    
+
   sql_log(DEBUG_FUNC, "%s", " >>> tds _build_data");
-  if (!conn) 
+  if (!conn){
     return ERROR_MSG(cmd, MOD_SQL_TDS_VERSION, "badly formed request");
-  
+  }
   /* create a sql_data structure to eventually hold results */
   sd = (sql_data_t *) pcalloc(cmd->tmp_pool, sizeof(sql_data_t));
-  
+
   sd->fnum = (unsigned long) dbnumcols(conn->dbproc); /* Number of columns in the result */
   sql_log(DEBUG_INFO, "%d columns in the result ", sd->fnum);
-  
+
   /*create datastructure to hold the results */
   row = (BYTE **) pcalloc(cmd->tmp_pool, sizeof(BYTE *) * sd->fnum);
-  
+
   /* setup the temp storage to hold all of our data here */
   td = (tempdata_t *)pcalloc(cmd->tmp_pool, sizeof(tempdata_t));
-  
+
   /* make sure td points to the top of the list */
   ptr = td;
-  
+
   ptr->data = pcalloc(cmd->tmp_pool,(sizeof(char *) * sd->fnum));
   ptr->next = NULL;
-  
+
   /* need to bind the columns for our results */
   for (x=0;x<sd->fnum;x++){
     row[x] = (BYTE *)pcalloc(cmd->tmp_pool, 256);
     dbbind(conn->dbproc, x+1, STRINGBIND, (DBINT) 0, row[x]);
   }
-  
+
   /* return the rows from the query and populate temp list */
   while(dbnextrow(conn->dbproc) != NO_MORE_ROWS){
     if(rcount > 0){
@@ -274,18 +273,18 @@ static modret_t *_build_data( cmd_rec *cmd, db_conn_t *conn ){
       ptr->next = NULL;
       sql_log(DEBUG_INFO, "%s", " Created a new temp record");
     }
-    
+
     /* add onto our temp record */
     for(x=0;x<sd->fnum;x++){
       ptr->data[x] = pstrdup(cmd->tmp_pool, (char*)row[x]);
     }
     rcount++; /* done with this row -- inc to the next */
   }
-  
+
   sd->rnum = rcount;
-  cnt = sd->rnum * sd->fnum; 
+  cnt = sd->rnum * sd->fnum;
   data = (char **) pcalloc( cmd->tmp_pool, sizeof(char *) * (cnt + 1) );
-  
+
   /* reset list ptr */
   ptr = td;
   while (ptr != NULL){
@@ -296,7 +295,7 @@ static modret_t *_build_data( cmd_rec *cmd, db_conn_t *conn ){
     ptr = ptr->next;
   }
   data[index]=NULL;
-  
+
   sd->data = data;
   return mod_create_data( cmd, (void *) sd );
 }
@@ -316,7 +315,7 @@ MODRET cmd_open(cmd_rec *cmd){
   conn_entry_t *entry = NULL;
   db_conn_t *conn = NULL;
   LOGINREC *login;
-  
+
   sql_log(DEBUG_FUNC, "%s", ">>> tds cmd_open");
 
   _sql_check_cmd(cmd, "cmd_open" );
@@ -324,7 +323,7 @@ MODRET cmd_open(cmd_rec *cmd){
   if (cmd->argc < 1) {
     sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_open with argc < 1");
     return ERROR_MSG(cmd, MOD_SQL_TDS_VERSION, "badly formed request");
-  }    
+  }
 
   /* get the named connection */
 
@@ -333,7 +332,7 @@ MODRET cmd_open(cmd_rec *cmd){
     return ERROR_MSG(cmd, MOD_SQL_TDS_VERSION, "Unknown Named Connection");  } 
 
   conn = (db_conn_t *) entry->data;
-  
+
   /* if we're already open (connections > 0) increment connections 
    * reset our timer if we have one, and return HANDLED 
    */
@@ -347,13 +346,13 @@ MODRET cmd_open(cmd_rec *cmd){
     sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_open");
     return HANDLED(cmd);
   }
-  
+
   if(dbinit() == FAIL){
     pr_log_pri(PR_LOG_ERR, MOD_SQL_TDS_VERSION  ": failed to init database. Shutting down.");
     sql_log(DEBUG_WARN, "%s", " failed to init tds database! Shutting down.");
     end_login(1);
   }
-  
+
   sql_log(DEBUG_FUNC, "%s", "Attempting to call dblogin ");
   login = dblogin();
   DBSETLPWD(login,conn->pass);
@@ -361,22 +360,23 @@ MODRET cmd_open(cmd_rec *cmd){
   DBSETLUSER(login,conn->user);
   sql_log(DEBUG_FUNC, "Adding user %s and password %s to login", conn->user,conn->pass);
   sql_log(DEBUG_FUNC, "%s", "calling dbopen");
- 
-  #ifdef PR_USE_NLS
-	//We actually need to set the Char encoding before we open the connection
-	// according to 
-	// http://manuals.sybase.com:80/onlinebooks/group-cnarc/cng1110e/dblib/@Generic__BookTextView/37135;pt=37135#X
-	//  The Client picks a default char and the server does conversions between the local and server sets.  
-	// This should override any char set, that was set in your interfaces file
-	if (pr_encode_get_encoding() != NULL){
-		DBSETLCHARSET(login,pr_encode_get_charset());
-		sql_log(DEBUG_FUNC,"Setting Client Character Set to '%s'",pr_encode_get_charset());
-	}
-   #endif /* !PR_USE_NLS */
+
+ #ifdef PR_USE_NLS
+/* We actually need to set the Char encoding before we open the connection
+ * according to 
+ * http://manuals.sybase.com:80/onlinebooks/group-cnarc/cng1110e/dblib/@Generic__BookTextView/37135;pt=37135#X
+ * The Client picks a default char and the server does conversions between the local and server sets.
+ * This should override any char set, that was set in your interfaces file
+ */
+  if (pr_encode_get_encoding() != NULL){
+    DBSETLCHARSET(login,pr_encode_get_charset());
+    sql_log(DEBUG_FUNC,"Setting Client Character Set to '%s'",pr_encode_get_charset());
+  }
+#endif /* !PR_USE_NLS */
 
   conn->dbproc = dbopen(login,conn->server);
-  
-  //free the login rec. 
+
+  //free the login rec.
   dbloginfree(login);
   sql_log(DEBUG_FUNC, "%s", "freeing our loginrec");
   if(!conn->dbproc){
@@ -384,7 +384,7 @@ MODRET cmd_open(cmd_rec *cmd){
     sql_log(DEBUG_WARN, "%s", " failed to Login to DB server. Shutting down.");
     end_login(1);
   }
-  
+
   sql_log(DEBUG_FUNC, "attempting to switch to database: %s", conn->db);
   if(dbuse(conn->dbproc, conn->db) == FAIL){
     pr_log_pri(PR_LOG_ERR, MOD_SQL_TDS_VERSION ": failed to use database Shutting down.");
@@ -395,15 +395,22 @@ MODRET cmd_open(cmd_rec *cmd){
 
   /* bump connections */
   entry->connections++;
-  
-  /* set up our timer if necessary */
-  if (entry->ttl > 0) {
-    entry->timer = pr_timer_add(entry->ttl, -1, 
-			     &sql_tds_module, 
-			     _sql_timer_callback,
-				 "TDS Connection ttl"); 
+
+  if(pr_sql_conn_policy == SQL_CONN_POLICY_PERSESSION){
+    if (entry->connections == 1){
+      /*if this is our first connection, bump again to make sure the connection
+       * stays open after first use,  see bug #3290) 
+       */
+      entry->connections++;
+    }
+  }else if (entry->ttl > 0) {
+    /* set up our timer if necessary */
+    entry->timer = pr_timer_add(entry->ttl, -1,
+        &sql_tds_module, 
+        _sql_timer_callback,
+        "TDS Connection ttl"); 
     sql_log(DEBUG_INFO, "connection '%s' - %d second timer started",
-	        entry->name, entry->ttl);
+        entry->name, entry->ttl);
 
     /* timed connections get re-bumped so they don't go away when cmd_close
      * is called.
@@ -412,7 +419,7 @@ MODRET cmd_open(cmd_rec *cmd){
   }
 
   /* return HANDLED */
-  
+
   sql_log(DEBUG_INFO, "connection '%s' opened count is now %d", entry->name, entry->connections);
   sql_log(DEBUG_FUNC, "%s", " <<< tds cmd_open");
   return HANDLED(cmd);
@@ -431,7 +438,7 @@ MODRET cmd_open(cmd_rec *cmd){
  *  closed, or a simple non-error modret_t.  For the case of mod_sql_mysql,
  *  there are no error codes returned by the close call; other backends
  *  may be able to return a useful error message.
- * 
+ *
  *  If argv[1] exists and is not NULL, the connection should be immediately
  *  closed and the connection count should be reset to 0.
  */
@@ -442,7 +449,7 @@ MODRET cmd_close(cmd_rec *cmd){
   sql_log(DEBUG_FUNC, "%s", ">>> tds cmd_close");
 
   _sql_check_cmd(cmd, "cmd_close");
-  
+
   if ((cmd->argc < 1) || (cmd->argc > 2)) {
     sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_close --badly formed request");
     return ERROR_MSG(cmd, MOD_SQL_TDS_VERSION, "badly formed request");
@@ -453,15 +460,14 @@ MODRET cmd_close(cmd_rec *cmd){
     sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_close -- unknown named connection");
     return ERROR_MSG(cmd, MOD_SQL_TDS_VERSION, "Unknown Named Connection");
   }
-  
+
   conn = (db_conn_t *) entry->data;
-  
+
   /* if we're closed already (connections == 0) return HANDLED */
   if (entry->connections == 0) {
     sql_log(DEBUG_INFO, "connection '%s' count is now %d", entry->name, entry->connections);
-    
     sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_close - connections = 0");
-    
+
     return HANDLED(cmd);
   }
 
@@ -474,20 +480,20 @@ MODRET cmd_close(cmd_rec *cmd){
     dbclose(conn->dbproc);
     conn->dbproc = NULL;
     entry->connections = 0;
-    
+
     if (entry->timer) {
       pr_timer_remove( entry->timer, &sql_tds_module );
       entry->timer = 0;
       sql_log(DEBUG_INFO, "connection '%s' - timer stopped",
-		entry->name );
+          entry->name );
     }
-    
+
     sql_log(DEBUG_INFO, "connection '%s' closed", entry->name);
   }
 
   sql_log(DEBUG_INFO, "connection '%s' count is now %d", entry->name, entry->connections);
   sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_close");
-  
+
   return HANDLED(cmd);
 }
 
@@ -517,23 +523,23 @@ MODRET cmd_close(cmd_rec *cmd){
 MODRET cmd_defineconnection(cmd_rec *cmd){
   char *info = NULL;
   char *name = NULL;
-  
+
   char *db = NULL;
   char *server = NULL;
   char *haveserver = NULL;
-  
+
   conn_entry_t *entry = NULL;
   db_conn_t *conn = NULL; 
-  
+
   sql_log(DEBUG_FUNC, "%s", ">>> tds cmd_defineconnection");
-  
+
   _sql_check_cmd(cmd, "cmd_defineconnection");
-  
+
   if ((cmd->argc < 4) || (cmd->argc > 5) || (!cmd->argv[0])) {
     sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_defineconnection - invalid argv count");
     return ERROR_MSG(cmd, MOD_SQL_TDS_VERSION, "badly formed request");
   }
-  
+
   if (!conn_pool) {
     pr_log_pri(PR_LOG_WARNING, "warning: the mod_sql_tds module has not been "
       "properly initialized.  Please make sure your --with-modules configure "
@@ -548,17 +554,17 @@ MODRET cmd_defineconnection(cmd_rec *cmd){
   }
 
   conn = (db_conn_t *) palloc(conn_pool, sizeof(db_conn_t));
-  
+
   name = pstrdup(conn_pool, cmd->argv[0]);
   conn->user = pstrdup(conn_pool, cmd->argv[1]);
   conn->pass = pstrdup(conn_pool, cmd->argv[2]);
-  
+
   info = cmd->argv[3];
-  
+
   db = pstrdup(cmd->tmp_pool, info);
 
   haveserver = strchr(db, '@');
-  
+
   if (haveserver) {
     server = haveserver + 1;
     *haveserver = '\0';
@@ -568,16 +574,16 @@ MODRET cmd_defineconnection(cmd_rec *cmd){
     server = getenv("DSQUERY");
     if(server == NULL){
       pr_log_pri(PR_LOG_ERR, "%s", "NO Host Specified and DSQUERY Enviroment Variable NOT Found! "
-	      "-- Shutting down!.");
+          "-- Shutting down!.");
       sql_log(DEBUG_WARN, "%s", "NO Host Specified and DSQUERY Enviroment Variable NOT Found! "
-		"-- Shutting down!.");
+          "-- Shutting down!.");
       end_login(1);  /* is this the right command to use here? */
     }
   }
-  
+
   conn->server = pstrdup(conn_pool, server);
   conn->db   = pstrdup(conn_pool, db);
-  
+
   /* insert the new conn_info into the connection hash */
   if (!(entry = _sql_add_connection(conn_pool, name, (void *) conn))) {
     sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_defineconnection");
@@ -586,7 +592,7 @@ MODRET cmd_defineconnection(cmd_rec *cmd){
 
   entry->ttl = (cmd->argc == 5) ? 
     (int) strtol(cmd->argv[4], (char **)NULL, 10) : 0;
-  if (entry->ttl < 0) 
+  if (entry->ttl < 0)
     entry->ttl = 0;
 
   entry->timer = 0;
@@ -601,13 +607,13 @@ MODRET cmd_defineconnection(cmd_rec *cmd){
   return HANDLED(cmd);
 }
 
-/* 
+/*
  * cmd_exit: walks the connection cache and closes every
  *  open connection, resetting their connection counts to 0.
  */
 static modret_t *cmd_exit(cmd_rec *cmd) {
   register unsigned int cnt = 0;
-  
+
   sql_log(DEBUG_FUNC,"%s",">>> tds cmd_exit");
   conn_entry_t *entry = NULL;
 
@@ -641,17 +647,17 @@ static modret_t *cmd_exit(cmd_rec *cmd) {
  * Optional:
  *  cmd->argv[3]: where clause 
  *  cmd->argv[4]: requested number of return rows (LIMIT)
- *  
+ *
  *  etc.        : other options, such as "GROUP BY", "ORDER BY",
- *                and "DISTINCT" will start at cmd->arg[5].  All 
+ *                and "DISTINCT" will start at cmd->arg[5].  All
  *                backends MUST support 'DISTINCT', the other
- *                arguments are optional (but encouraged).         
+ *                arguments are optional (but encouraged).
  *
  * Returns:
  *  either a properly filled error modret_t if the select failed, or a 
  *  modret_t with the result data filled in.
  *
- *  
+ *
  *  argv[] = "default","user","userid, count", "userid='aah'","2"
  *  query  = "SELECT TOP 2 userid, count FROM user WHERE userid='aah'"
  *
@@ -703,7 +709,7 @@ MODRET cmd_select(cmd_rec *cmd){
     query = pstrcat(cmd->tmp_pool, "SELECT ", cmd->argv[1], NULL);
   } else {
     query = pstrcat( cmd->tmp_pool, cmd->argv[2], " FROM ", 
-		     cmd->argv[1], NULL );
+        cmd->argv[1], NULL );
     if ((cmd->argc > 3) && (cmd->argv[3]))
       query = pstrcat( cmd->tmp_pool, query, " WHERE ", cmd->argv[3], NULL );
     if ((cmd->argc > 4) && (cmd->argv[4]))
@@ -715,15 +721,15 @@ MODRET cmd_select(cmd_rec *cmd){
        * general we should probably take optional arguments into account 
        * and put the query string together later once we know what they are.
        */
-    
+
       for (cnt=5; cnt < cmd->argc; cnt++) {
-	if ((cmd->argv[cnt]) && !strcasecmp("DISTINCT",cmd->argv[cnt])) {
-	  query = pstrcat( cmd->tmp_pool, "DISTINCT ", query, NULL);
-	}
+        if ((cmd->argv[cnt]) && !strcasecmp("DISTINCT",cmd->argv[cnt])) {
+          query = pstrcat( cmd->tmp_pool, "DISTINCT ", query, NULL);
+        }
       }
     }
 
-    query = pstrcat( cmd->tmp_pool, "SELECT ", query, NULL);    
+    query = pstrcat( cmd->tmp_pool, "SELECT ", query, NULL);
   }
 
   /* log the query string */
@@ -748,30 +754,30 @@ MODRET cmd_select(cmd_rec *cmd){
     close_cmd = _sql_make_cmd( cmd->tmp_pool, 1, entry->name );
     cmd_close(close_cmd);
     SQL_FREE_CMD( close_cmd );
-    
+
     sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_select DBRESULTS == FAIL");
     return dmr;
   }
-  
+
   /* get the data. if it doesn't work, log the error, close the
    * connection then return the error from the data processing.
    */
   dmr = _build_data( cmd, conn );
   if (MODRET_ERROR(dmr)) {
     sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_select");
-    
+
     close_cmd = _sql_make_cmd( cmd->tmp_pool, 1, entry->name );
     cmd_close(close_cmd);
     SQL_FREE_CMD( close_cmd );
-    
+
     return dmr;
-  }    
-  
+  }
+
   /* close the connection, return the data. */
   close_cmd = _sql_make_cmd( cmd->tmp_pool, 1, entry->name );
   cmd_close(close_cmd);
   SQL_FREE_CMD( close_cmd );
-  
+
   sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_select (normal)");
   return dmr;
 }
@@ -838,19 +844,19 @@ MODRET cmd_insert(cmd_rec *cmd){
     sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_insert");
     return cmr;
   }
-  
+
   /* construct the query string */
   if (cmd->argc == 2) {
     query = pstrcat(cmd->tmp_pool, "INSERT ", cmd->argv[1], NULL);
   } else {
     query = pstrcat( cmd->tmp_pool, "INSERT INTO ", cmd->argv[1], " (",
-		     cmd->argv[2], ") VALUES (", cmd->argv[3], ")",
-		     NULL );
+        cmd->argv[2], ") VALUES (", cmd->argv[3], ")",
+        NULL );
   }
-  
+
   /* log the query string */
   sql_log( DEBUG_INFO, "query \"%s\"", query);
-  
+
   /* perform the query.  if it doesn't work, log the error, close the
    * connection (and log any errors there, too) then return the error
    * from the query processing.
@@ -858,9 +864,8 @@ MODRET cmd_insert(cmd_rec *cmd){
   dbcmd(conn->dbproc, query);
   dbsqlexec(conn->dbproc);
   if(dbresults(conn->dbproc) != SUCCEED){
-    
     dmr = _build_error( cmd, conn );
-    
+
     close_cmd = _sql_make_cmd( cmd->tmp_pool, 1, entry->name );
     cmd_close(close_cmd);
     SQL_FREE_CMD( close_cmd );
@@ -895,7 +900,7 @@ MODRET cmd_insert(cmd_rec *cmd){
  *
  * Returns:
  *  either a properly filled error modret_t if the update failed, or a 
- *  simple non-error modret_t. *  
+ *  simple non-error modret_t. *
  *
  */
 MODRET cmd_update(cmd_rec *cmd){
@@ -934,9 +939,10 @@ MODRET cmd_update(cmd_rec *cmd){
   } else {
     /* construct the query string */
     query = pstrcat( cmd->tmp_pool, "UPDATE ", cmd->argv[1], " SET ",
-		     cmd->argv[2], NULL );
-    if ((cmd->argc > 3) && (cmd->argv[3]))
+        cmd->argv[2], NULL );
+    if ((cmd->argc > 3) && (cmd->argv[3])) {
       query = pstrcat( cmd->tmp_pool, query, " WHERE ", cmd->argv[3], NULL );
+    }
   }
 
   /* log the query string */
@@ -948,22 +954,21 @@ MODRET cmd_update(cmd_rec *cmd){
   dbcmd(conn->dbproc, query);
   dbsqlexec(conn->dbproc);
   if(dbresults(conn->dbproc) != SUCCEED){
-    
     dmr = _build_error( cmd, conn );
-    
+
     close_cmd = _sql_make_cmd( cmd->tmp_pool, 1, entry->name );
     cmd_close(close_cmd);
     SQL_FREE_CMD( close_cmd );
-    
+
     sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_update");
     return dmr;
   }
-  
+
   /* close the connection, return HANDLED.  */
   close_cmd = _sql_make_cmd( cmd->tmp_pool, 1, entry->name );
   cmd_close(close_cmd);
   SQL_FREE_CMD( close_cmd );
-  
+
   sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_update");
   return HANDLED(cmd);
 }
@@ -991,7 +996,7 @@ MODRET cmd_procedure(cmd_rec *cmd)
   sql_log(DEBUG_FUNC, "%s", ">>> tds cmd_procedure");
 
   _sql_check_cmd(cmd, "cmd_procedure");
-  
+
   if (cmd->argc != 3) {
     sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_procedure");
     return ERROR_MSG(cmd, MOD_SQL_TDS_VERSION, "badly formed request");  }
@@ -999,7 +1004,7 @@ MODRET cmd_procedure(cmd_rec *cmd)
   /* TDS has procedures, just need to write code to do it */
 
   sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_procedure");
-  
+
   return ERROR_MSG(cmd, MOD_SQL_TDS_VERSION, "backend does not support procedures -- YET!");
 }
 
@@ -1018,7 +1023,7 @@ MODRET cmd_procedure(cmd_rec *cmd)
  *
  * Example:
  *  None.  The query should be passed directly to the backend database.
- *  
+ *
  * Notes:
  *  None.
  */
@@ -1045,15 +1050,15 @@ MODRET cmd_query(cmd_rec *cmd){
     sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_query");
     return ERROR_MSG(cmd, MOD_SQL_TDS_VERSION, "unknown named connection");
   }
-  
+
   conn = (db_conn_t *) entry->data;
-  
+
   cmr = cmd_open(cmd);
   if (MODRET_ERROR(cmr)) {
     sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_query");
     return cmr;
   }
-  
+
   query = pstrcat(cmd->tmp_pool, cmd->argv[1], NULL);
 
   /* log the query string */
@@ -1065,13 +1070,12 @@ MODRET cmd_query(cmd_rec *cmd){
   dbcmd(conn->dbproc, query);
   dbsqlexec(conn->dbproc);
   if(dbresults(conn->dbproc) != SUCCEED){
-    
     dmr = _build_error( cmd, conn );
-    
+
     close_cmd = _sql_make_cmd( cmd->tmp_pool, 1, entry->name );
     cmd_close(close_cmd);
     SQL_FREE_CMD( close_cmd );
-    
+
     sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_query");
     return dmr;
   }
@@ -1079,7 +1083,7 @@ MODRET cmd_query(cmd_rec *cmd){
   /* get data if necessary. if it doesn't work, log the error, close the
    * connection then return the error from the data processing.
    */
-  
+
   if ( dbnumcols( conn->dbproc ) ) {
     dmr = _build_data( cmd, conn );
     if (MODRET_ERROR(dmr)) {
@@ -1088,12 +1092,12 @@ MODRET cmd_query(cmd_rec *cmd){
   } else {
     dmr = HANDLED(cmd);
   }
-  
+
   /* close the connection, return the data. */
   close_cmd = _sql_make_cmd( cmd->tmp_pool, 1, entry->name );
   cmd_close(close_cmd);
   SQL_FREE_CMD( close_cmd );
-  
+
   sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_query");
   return dmr;
 }
@@ -1119,7 +1123,7 @@ MODRET cmd_escapestring(cmd_rec * cmd){
   modret_t *cmr = NULL;
   char *unescaped = NULL;
   char *escaped = NULL;
-  
+
   sql_log(DEBUG_FUNC, "%s", ">>> tds cmd_escapestring");
 
   _sql_check_cmd(cmd, "cmd_escapestring");
@@ -1137,7 +1141,7 @@ MODRET cmd_escapestring(cmd_rec * cmd){
   }
 
   conn = (db_conn_t *) entry->data;
-  
+
   /* Make sure the connection is opened */ 
   cmr = cmd_open(cmd);
   if (MODRET_ERROR(cmr)) {
@@ -1145,16 +1149,16 @@ MODRET cmd_escapestring(cmd_rec * cmd){
     return cmr;
   }
 
-  /** 
+  /**
    * Pass the unescaped to dbsafestr() to make it safe 
    */
   unescaped = cmd->argv[1];
   escaped = (char *) pcalloc(cmd->tmp_pool, sizeof(char) * (strlen(unescaped) * 2) + 1);
   dbsafestr(conn->dbproc,unescaped,-1,escaped,-1,DBBOTH);
-  
+
   sql_log(DEBUG_FUNC, "before: '%s' after '%s'", unescaped,escaped);
   sql_log(DEBUG_FUNC, "%s", "<<< tds cmd_escapestring");
-  
+
   /* close the connection, return the data. */
   close_cmd = _sql_make_cmd( cmd->tmp_pool, 1, entry->name );
   cmd_close(close_cmd);
@@ -1192,9 +1196,9 @@ MODRET cmd_checkauth(cmd_rec * cmd){
 }
 
 /*
- * cmd_identify: returns API information and an identification string for 
- *  the backend handler.  mod_sql will call this at initialization and 
- *  display the identification string.  The API version information is 
+ * cmd_identify: returns API information and an identification string for
+ *  the backend handler.  mod_sql will call this at initialization and
+ *  display the identification string.  The API version information is
  *  used by mod_sql to identify available command handlers.
  *
  * Inputs:
@@ -1226,7 +1230,7 @@ MODRET cmd_identify(cmd_rec * cmd){
   sd->data[1] = MOD_SQL_API_V1;
 
   return mod_create_data(cmd, (void *) sd);
-}  
+}
 
 /*
  * cmd_cleanup: cleans up any initialisations made during module preparations
@@ -1255,19 +1259,18 @@ MODRET cmd_cleanup(cmd_rec *cmd) {
  *  Success.
  */
 MODRET cmd_prepare(cmd_rec *cmd) {
-	if (cmd->argc != 1) {
-		return PR_ERROR(cmd);
-	}
- 
-	conn_pool = (pool *) cmd->argv[0];
-	if (conn_cache == NULL) {
-		conn_cache = make_array((pool *) cmd->argv[0], DEF_CONN_POOL_SIZE,
-		   sizeof(conn_entry_t *));
-	} 
-	return mod_create_data(cmd, NULL);
+  if (cmd->argc != 1) {
+    return PR_ERROR(cmd);
+  }
+  conn_pool = (pool *) cmd->argv[0];
+  if (conn_cache == NULL) {
+    conn_cache = make_array((pool *) cmd->argv[0], DEF_CONN_POOL_SIZE,
+        sizeof(conn_entry_t *));
+  }
+  return mod_create_data(cmd, NULL);
 }
 
-/* 
+/*
  * sql_tds_cmdtable: mod_sql requires each backend module to define a cmdtable
  *  with this exact name. ALL these functions must be defined; mod_sql checks
  *  that they all exist on startup and ProFTPD will refuse to start if they
@@ -1342,10 +1345,9 @@ static int sql_tds_init(void) {
 static int sql_tds_sess_init(void){
   conn_pool = make_sub_pool(session.pool);
   if( conn_cache == NULL ) {
-  	conn_cache = make_array(make_sub_pool(session.pool), DEF_CONN_POOL_SIZE,
-            sizeof(conn_entry_t *));
+    conn_cache = make_array(make_sub_pool(session.pool), DEF_CONN_POOL_SIZE,
+        sizeof(conn_entry_t *));
   }
-
   return 0;
 }
 
@@ -1360,11 +1362,11 @@ module sql_tds_module = {
   0x20,                         /* API Version 2.0 */
   "sql_tds",
   /* Module Config Directive */
-  NULL,                   
+  NULL,
   /* Module Command Handlers */
-  NULL,                        
+  NULL,
   /* Module Authentication Handlers */
-  NULL,                  
+  NULL,
   /* Module Init */
   sql_tds_init,
   /* Session Init */
