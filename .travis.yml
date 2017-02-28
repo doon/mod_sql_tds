@@ -24,8 +24,8 @@ script:
   - git clone --depth 10 https://github.com/proftpd/proftpd.git
   - cp mod_sql_tds.c proftpd/contrib/
   - cd proftpd
-  - ./configure -enable-dso --enable-tests --with-shared=mod_sql:mod_sql_tds
+  - ./configure -enable-dso --with-shared=mod_sql:mod_sql_tds
   - make
   - make clean
-  - ./configure --enable-tests --with-modules=mod_sql:mod_sql_tds
+  - ./configure --with-modules=mod_sql:mod_sql_tds
   - make
