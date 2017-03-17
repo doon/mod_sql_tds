@@ -349,9 +349,9 @@ MODRET cmd_open(cmd_rec *cmd){
   }
 
   if(dbinit() == FAIL){
-    pr_log_pri(PR_LOG_ERR, MOD_SQL_TDS_VERSION  ": failed to init database. Shutting down.");
-    sql_log(DEBUG_WARN, "%s", " failed to init tds database! Shutting down.");
-    end_login(1);
+    sql_log(DEBUG_WARN, "%s", " failed to initialize FreeTDS library");
+    sql_log(DEBUG_FUNC, "%s", " <<< tds cmd_open");
+    return PR_ERROR_MSG(cmd, MOD_SQL_TDS_VERSION, "failed to initialize FreeTDS library");
   }
 
   sql_log(DEBUG_FUNC, "%s", "Attempting to call dblogin ");
@@ -381,16 +381,17 @@ MODRET cmd_open(cmd_rec *cmd){
   dbloginfree(login);
   sql_log(DEBUG_FUNC, "%s", "freeing our loginrec");
   if(!conn->dbproc){
-    pr_log_pri(PR_LOG_ERR, MOD_SQL_TDS_VERSION ": failed to Login to DB server! Shutting down.");
-    sql_log(DEBUG_WARN, "%s", " failed to Login to DB server. Shutting down.");
-    end_login(1);
+    /* If it didn't work, return an error. */
+    sql_log(DEBUG_WARN, "%s", " failed to Login to DB server");
+    sql_log(DEBUG_FUNC, "%s", " <<< tds cmd_open");
+    return PR_ERROR_MSG(cmd, MOD_SQL_TDS_VERSION, "failed to login to database server");
   }
 
   sql_log(DEBUG_FUNC, "attempting to switch to database: %s", conn->db);
   if(dbuse(conn->dbproc, conn->db) == FAIL){
-    pr_log_pri(PR_LOG_ERR, MOD_SQL_TDS_VERSION ": failed to use database Shutting down.");
-    sql_log(DEBUG_WARN, "%s", " failed to use database Shutting down.");
-    end_login(1);
+    sql_log(DEBUG_WARN, "%s", " failed to use database");
+    sql_log(DEBUG_FUNC, "%s", " <<< tds cmd_open");
+    return PR_ERROR_MSG(cmd, MOD_SQL_TDS_VERSION, "failed to use database");
   }
 
 
