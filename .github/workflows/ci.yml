@@ -1,0 +1,114 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  schedule:
+    - cron: '10 2 * * 1'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        compiler:
+          - clang
+          - gcc
+        container:
+          - ubuntu:20.04
+
+    container: ${{ matrix.container }}
+
+    steps:
+      - name: Checkout ProFTPD
+        uses: actions/checkout@v3
+        with:
+          repository: proftpd/proftpd
+          path: proftpd
+
+      - name: Checkout mod_sql_tds
+        uses: actions/checkout@v3
+        with:
+          path: proftpd-mod_sql_tds
+
+      - name: Whitespace check
+        if: ${{ matrix.container == 'ubuntu:20.04' }}
+        run: |
+          apt-get update -qq
+          apt-get install -y git
+          cd proftpd-mod_sql_tds
+          if [[ -n $(git diff --check HEAD^) ]]; then
+            echo "You must remove whitespace before submitting a pull request"
+            echo ""
+            git diff --check HEAD^
+            exit 1
+          fi
+
+      - name: Prepare module source code
+        run: |
+          cp proftpd-mod_sql_tds/mod_sql_tds.c proftpd/contrib/
+
+      - name: Install Ubuntu packages
+        if: ${{ matrix.container == 'ubuntu:20.04' }}
+        run: |
+          apt-get update -qq
+          # for builds
+          apt-get install -y clang gcc make
+          # for unit tests
+          apt-get install -y check libsubunit-dev
+
+          # for TDS support
+          apt-get install -y freetds-dev
+
+          # for integration/regression test
+          # for test code coverage
+          apt-get install -y lcov ruby
+          gem install coveralls-lcov
+          # for HTML validation
+          apt-get install -y tidy
+          # for debugging
+          clang --version
+          gcc --version
+
+      - name: Prepare code coverage
+        if: ${{ matrix.container == 'ubuntu:20.04' }}
+        run: |
+          lcov --directory proftpd --zerocounters
+
+      - name: Build as static module
+        env:
+          CC: ${{ matrix.compiler }}
+        run: |
+          cd proftpd
+          ./configure LIBS="-lm -lsubunit -lrt -pthread" --enable-devel=coverage --enable-tests --with-modules=mod_sql:mod_sql_tds
+          make
+
+      - name: Install as static module
+        run: |
+          cd proftpd
+          make install
+
+      - name: Build as shared module
+        env:
+          CC: ${{ matrix.compiler }}
+        run: |
+          cd proftpd
+          make clean
+          ./configure LIBS="-lm -lsubunit -lrt -pthread" --enable-devel --enable-dso --with-shared=mod_sql:mod_sql_tds
+          make
+
+      - name: Install as shared module
+        run: |
+          cd proftpd
+          make install
+
+      - name: Check HTML docs
+        run: |
+          cd proftpd-mod_sql_tds
+          echo "Processing mod_sql_tds.html"
+          tidy -errors -omit -q mod_sql_tds.html | exit 0
